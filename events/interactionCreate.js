@@ -8,9 +8,9 @@ module.exports = {
             try {
                 await command.execute(interaction, client);
             } catch (err) {
-                console.error(err);
+                console.error('Error executing slash command:', err);
                 if (!interaction.replied) {
-                    interaction.reply({ content: '⚠️ An error occurred while executing that command.', ephemeral: true }).catch(() => {});
+                    interaction.reply({ content: '⚠️ An error occurred while executing that command. I might lack permission for that command, or for this channel.', ephemeral: true }).catch(() => {});
                 }
             }
         } else if (interaction.isStringSelectMenu()) {
