@@ -1,0 +1,15 @@
+{
+  "name": "dva-bot",
+  "version": "1.0.0",
+  "main": "index.js",
+  "repository": "https:///github.com/N8WM/dva-bot.git",
+  "author": "Nathan McCutchen <n8wm@icloud.com>",
+  "license": "ISC",
+  "private": false,
+  "dependencies": {
+  },
+  "scripts": {
+    "start": "node index.js",
+    "deploy": "node deploy-commands.js"
+  }
+}
