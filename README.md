@@ -1,5 +1,5 @@
 # D\.Va Bot
-D\.Va helps you tidy up your discord server by replacing redundant channels with a single thread hub channel!
+D\.Va helps tidy up discord servers by replacing redundant channels with a single thread hub channel
 
 ---
 
