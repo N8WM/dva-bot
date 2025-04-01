@@ -1,8 +1,10 @@
 # D.Va – The Discord Thread Hub Bot
 
-**D.Va helps tidy up your Discord server by replacing redundant channels with a single, centralized thread hub.**
+**D.Va helps tidy up your Discord server by replacing redundant channels with a single, centralized thread hub for each topic.**
 
-When your server is cluttered with multiple channels for different topics and games, D.Va allows you to condense them into one clean hub channel for each general topic. All discussions take place in individual threads that hide when inactive, and a live table-of-contents (TOC) keeps track of every thread—giving access even to those that have gone inactive.
+When your server is cluttered with multiple channels for different topics and games, D.Va allows you to condense them into one clean hub channel for each general topic. All discussions take place in individual threads that hide when inactive, and a live table-of-contents keeps track of every thread, giving access even to those that have gone inactive.
+
+![example](https://github.com/N8WM/dva-bot/blob/main/assets/example.png?raw=true)
 
 ## Why Add D.Va to Your Server?
 
@@ -10,10 +12,10 @@ When your server is cluttered with multiple channels for different topics and ga
   Replace pages of topics and subchannels with one hub channel per topic where every discussion is neatly organized into threads that automatically hide or show depending on their activity.
 
 - **Live Thread Index**  
-  A continuously updated embed message displays a clickable list of active threads, allowing members to easily jump into any conversation, even inactive ones.
+  A continuously updated embed message displays a clickable list of threads, allowing members to easily jump into any conversation, even inactive ones.
 
 - **Simplified Management**  
-  Quickly activate, deactivate, or disable the hub with simple slash commands, and pick your choice between slash commands or Discord's native thread management features to create and close threads.
+  Quickly activate, deactivate, or disable the hub with simple slash commands, and pick your choice between slash commands or Discord's native thread management features to create and delete threads.
 
 - **Clean User Experience**  
   Non-thread messages in the hub channel are automatically deleted, keeping the space focused on ongoing discussions.
@@ -37,5 +39,5 @@ When your server is cluttered with multiple channels for different topics and ga
 - **Creating Threads**  
   Use `/thread create <name>` in an active hub channel to start a new discussion. The provided name becomes the thread’s title and appears immediately in the TOC. You can also create a new thread just like you normally would.
 
-- **Closing Threads**  
-  Threads can be closed either by using `/thread close` from within the thread or from the hub channel. In the hub channel, a dropdown menu lists all active threads for easy selection and closure. You can also close a thread just like you normally would.
+- **Deleting Threads**  
+  Threads can be deleted either by using `/thread delete` from within the thread or from the hub channel. In the hub channel, a dropdown menu lists all threads for easy selection and deletion. You can also delete a thread just like you normally would.
