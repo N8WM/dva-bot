@@ -53,9 +53,10 @@ module.exports = {
         if (fetchedThreads.size === 0) {
             description = '*No threads yet.*';
         } else {
-            description = fetchedThreads.map(t => `## ${symbol(t)} <#${t.id}>`).join('\n');
+            let description1 = fetchedThreads.map(t => `## ${symbol(t)} <#${t.id}>`).join('\n');
+            let description2 = fetchedThreads.map(t => `[ • ${symbol(t)} ${t.name}](https://discord.com/channels/${t.guildId}/${t.id})`).join('\n');
+            description = `**If getting <#0> bug:**\n${description2}\n__ __\n${description1}`;
         }
-
         // Build or update embed
         let embed;
         if (threadListMsg.embeds[0]) {
