@@ -1,5 +1,5 @@
 // commands/hub.js
-const { SlashCommandBuilder, PermissionFlagsBits, ChannelType, EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder, PermissionFlagsBits, ChannelType, EmbedBuilder, MessageFlags } = require('discord.js');
 const { updateThreadList } = require('../utils/hubUtil');
 
 module.exports = {
@@ -25,7 +25,7 @@ module.exports = {
 
         // Ensure the command is used in a guild text channel
         if (!channel || channel.type !== ChannelType.GuildText) {
-            return interaction.reply({ content: '❌ This command can only be used in a server text channel.', ephemeral: true });
+            return interaction.reply({ content: '❌ This command can only be used in a server text channel.', flags: MessageFlags.Ephemeral });
         }
 
         if (sub === 'activate') {
@@ -34,14 +34,14 @@ module.exports = {
             if (messages.size > 1) {
                 return interaction.reply({ 
                     content: '⚠️ The channel is not empty. Please clear messages or disable the existing hub before activating.', 
-                    ephemeral: true 
+                    flags: MessageFlags.Ephemeral
                 });
             }
             if (!channel.name.endsWith('-hub')) {
                 try {
                     channel.setName(channel.name + '-hub');
                 } catch (error) {
-                    return interaction.reply({ content: '❌ Thread hub channel names must end with the suffix "-hub".', ephemeral: true });
+                    return interaction.reply({ content: '❌ Thread hub channel names must end with the suffix "-hub".', flags: MessageFlags.Ephemeral });
                 }
             }
             // If one message exists, verify it is a bot thread list message
@@ -53,7 +53,7 @@ module.exports = {
                 if (!isBotList) {
                     return interaction.reply({ 
                         content: '⚠️ There is already a non-hub message in this channel. Please clear it before activating the hub.', 
-                        ephemeral: true 
+                        flags: MessageFlags.Ephemeral 
                     });
                 }
                 threadListMsg = loneMessage;  // reuse this message
@@ -71,18 +71,17 @@ module.exports = {
                 // No existing message, create a new one
                 embed = new EmbedBuilder()
                     .setTitle('📌 Thread Hub')
-                    .setDescription('*No active threads.*')  // initially no threads
+                    .setDescription('*No threads yet.*')  // initially no threads
                     .setColor(0x3ba55d)
                     .setFooter({ text: 'Hub Active – updating thread list' });
                 threadListMsg = await channel.send({ embeds: [embed] });
-                await threadListMsg.pin().catch(() => {}); // pin the message for visibility (ignore if no permission)
             }
 
             // Record this channel as active hub
             client.hubChannels.set(channel.id, { message: threadListMsg, active: true });
-            // Populate the thread list with any currently active threads (in case some exist)
+            // Populate the thread list with any existing threads
             await updateThreadList(client, channel);
-            return interaction.reply({ content: `✅ This channel is now a hub. Use /thread commands to manage threads.`, ephemeral: true });
+            return interaction.reply({ content: `✅ This channel is now a hub. Use /thread commands to manage threads.`, flags: MessageFlags.Ephemeral });
         }
 
         if (sub === 'deactivate') {
@@ -98,9 +97,9 @@ module.exports = {
                         .setFooter({ text: 'Hub Inactive – list not updating' });
                     await existingMsg.edit({ embeds: [updatedEmbed] });
                     client.hubChannels.set(channel.id, { message: existingMsg, active: false });
-                    return interaction.reply({ content: 'ℹ️ Hub is already inactive. The thread list will not update until reactivated.', ephemeral: true });
+                    return interaction.reply({ content: 'ℹ️ Hub is already inactive. The thread list will not update until reactivated.', flags: MessageFlags.Ephemeral });
                 }
-                return interaction.reply({ content: '❌ This channel is not set up as an active hub.', ephemeral: true });
+                return interaction.reply({ content: '❌ This channel is not set up as an active hub.', flags: MessageFlags.Ephemeral });
             }
             // We have an active hub to deactivate
             hubData.active = false;
@@ -109,7 +108,7 @@ module.exports = {
                 .setColor(0x808080)
                 .setFooter({ text: 'Hub Inactive – list not updating' });
             await hubData.message.edit({ embeds: [embed] });
-            return interaction.reply({ content: '✅ Hub deactivated. (Thread list frozen until you activate again.)', ephemeral: true });
+            return interaction.reply({ content: '✅ Hub deactivated. (Thread list frozen until you activate again.)', flags: MessageFlags.Ephemeral });
         }
 
         if (sub === 'disable') {
@@ -119,11 +118,11 @@ module.exports = {
                 // Check if a leftover message exists
                 const maybeMsg = (await channel.messages.fetch({ limit: 1 })).first();
                 if (!maybeMsg || maybeMsg.author.id !== client.user.id || !maybeMsg.embeds?.[0]?.title?.includes('Thread Hub')) {
-                    return interaction.reply({ content: '❌ This channel is not a hub (nothing to disable).', ephemeral: true });
+                    return interaction.reply({ content: '❌ This channel is not a hub (nothing to disable).', flags: MessageFlags.Ephemeral });
                 }
                 // It has a hub message but our state was not tracking (possibly after restart). Delete it.
                 await maybeMsg.delete().catch(() => {});
-                return interaction.reply({ content: '✅ Hub message removed. Hub functionality is fully disabled.', ephemeral: true });
+                return interaction.reply({ content: '✅ Hub message removed. Hub functionality is fully disabled.', flags: MessageFlags.Ephemeral });
             }
             // We have a record of hub (active or inactive). Delete the list message.
             try {
@@ -133,7 +132,7 @@ module.exports = {
                 console.error('Failed to delete hub message:', error);
             }
             client.hubChannels.delete(channel.id);
-            return interaction.reply({ content: '✅ Hub disabled and thread list message removed. This channel is no longer a hub.', ephemeral: true });
+            return interaction.reply({ content: '✅ Hub disabled and thread list message removed. This channel is no longer a hub.', flags: MessageFlags.Ephemeral });
         }
     }
 };

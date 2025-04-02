@@ -1,3 +1,5 @@
+const { MessageFlags } = require('discord.js');
+
 // events/interactionCreate.js
 module.exports = {
     name: 'interactionCreate',
@@ -10,33 +12,33 @@ module.exports = {
             } catch (err) {
                 console.error('Error executing slash command:', err);
                 if (!interaction.replied) {
-                    interaction.reply({ content: '⚠️ An error occurred while executing that command. I might lack permission for that command, or for this channel.', ephemeral: true }).catch(() => {});
+                    interaction.reply({ content: '⚠️ An error occurred while executing that command. I might lack permission for that command, or for this channel.', flags: MessageFlags.Ephemeral}).catch(() => {});
                 }
             }
         } else if (interaction.isStringSelectMenu()) {
-            // Handle our thread close dropdown
-            if (interaction.customId === 'close-thread-select') {
+            // Handle our thread delete dropdown
+            if (interaction.customId === 'delete-thread-select') {
                 const threadId = interaction.values[0];
                 // Find the thread channel by ID
                 let thread;
                 try {
                     thread = await interaction.guild.channels.fetch(threadId);
                 } catch (err) {
-                    console.error('Failed to fetch thread for closing:', err);
+                    console.error('Failed to fetch thread for deletion:', err);
                 }
                 if (!thread) {
-                    return interaction.update({ content: '❌ Could not find the selected thread (maybe it was closed already).', components: [] });
+                    return interaction.update({ content: '❌ Could not find the selected thread (maybe it was deleted already).', components: [] });
                 }
                 // Permission check as in the command: allow if user is owner or has manage threads
                 const userHasPerm = interaction.memberPermissions.has('ManageThreads');
                 if (thread.ownerId !== interaction.user.id && !userHasPerm) {
-                    return interaction.update({ content: '❌ You do not have permission to close that thread.', components: [] });
+                    return interaction.update({ content: '❌ You do not have permission to delete that thread.', components: [] });
                 }
                 try {
-                    await thread.delete(`Closed by ${interaction.user}`);
+                    await thread.delete(`Deleted by ${interaction.user}`);
                 } catch (err) {
-                    console.error('Error archiving thread via select menu:', err);
-                    return interaction.update({ content: '❌ Failed to close the thread. I might lack permission.', components: [] });
+                    console.error('Error deleting thread via select menu:', err);
+                    return interaction.update({ content: '❌ Failed to delete the thread. I might lack permission.', components: [] });
                 }
                 // Update the hub thread list
                 const parentChannel = thread.parent;
@@ -45,7 +47,7 @@ module.exports = {
                     await updateThreadList(client, parentChannel);
                 }
                 // Edit the original ephemeral message to confirm and remove the menu
-                return interaction.update({ content: `✅ Closed thread **${thread.name}**.`, components: [] });
+                return interaction.update({ content: `✅ Deleted thread **${thread.name}**.`, components: [] });
             }
         }
     }

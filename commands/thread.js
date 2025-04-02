@@ -1,6 +1,6 @@
 // commands/thread.js
-const { SlashCommandBuilder, ChannelType, PermissionFlagsBits, ThreadAutoArchiveDuration, ChannelType: ChType } = require('discord.js');
-const { updateThreadList } = require('../utils/hubUtil');
+const { SlashCommandBuilder, ChannelType, PermissionFlagsBits, ThreadAutoArchiveDuration, ChannelType: ChType, MessageFlags } = require('discord.js');
+const { updateThreadList, getChannelThreads } = require('../utils/hubUtil');
 
 module.exports = {
     data: new SlashCommandBuilder()
@@ -13,8 +13,8 @@ module.exports = {
             .addStringOption(opt => opt.setName('name').setDescription('Thread topic/title').setRequired(true))
         )
         .addSubcommand(sub => sub
-            .setName('close')
-            .setDescription('Close (archive) a thread')
+            .setName('delete')
+            .setDescription('Delete a thread')
         ),
 
     async execute(interaction, client) {
@@ -22,22 +22,22 @@ module.exports = {
         const hubChannel = interaction.channel;
         // Ensure parent channel exists and is a text channel or thread
         if (!hubChannel) {
-            return interaction.reply({ content: '❌ This command cannot be used here.', ephemeral: true });
+            return interaction.reply({ content: '❌ This command cannot be used here.', flags: MessageFlags.Ephemeral });
         }
 
         if (sub === 'create') {
             // The command must be used in a hub channel (not inside a thread)
             if (hubChannel.type !== ChannelType.GuildText) {
-                return interaction.reply({ content: '❌ Use `/thread create` in the hub channel, not inside a thread.', ephemeral: true });
+                return interaction.reply({ content: '❌ Use `/thread create` in the hub channel, not inside a thread.', flags: MessageFlags.Ephemeral });
             }
             // Check that channel is an active hub
             const hubData = client.hubChannels.get(hubChannel.id);
             if (!hubData || !hubData.active) {
-                return interaction.reply({ content: '❌ This channel is not an active hub. Use `/hub activate` first.', ephemeral: true });
+                return interaction.reply({ content: '❌ This channel is not an active hub. Use `/hub activate` first.', flags: MessageFlags.Ephemeral });
             }
             const threadName = interaction.options.getString('name').trim();
             if (threadName.length === 0) {
-                return interaction.reply({ content: '❌ Please provide a valid thread name.', ephemeral: true });
+                return interaction.reply({ content: '❌ Please provide a valid thread name.', flags: MessageFlags.Ephemeral });
             }
             try {
                 // Create the thread in this channel
@@ -55,37 +55,36 @@ module.exports = {
                 console.error('Thread creation failed:', error);
                 return interaction.reply({ 
                     content: '❌ Failed to create thread. Make sure I have permission to Create Threads in this channel.', 
-                    ephemeral: true 
+                    flags: MessageFlags.Ephemeral
                 });
             }
             // Update the hub list to include the new thread
             await updateThreadList(client, hubChannel);
 
-            return interaction.reply({ content: `✅ Thread **${interaction.options.getString('name')}** created! (See the thread list above.)`, ephemeral: true });
+            return interaction.reply({ content: `✅ Thread **${interaction.options.getString('name')}** created! (See the thread list above.)`, flags: MessageFlags.Ephemeral });
         }
 
-        if (sub === 'close') {
+        if (sub === 'delete') {
             // Determine context: inside a thread or in a hub channel
             if (hubChannel.isThread()) {
-                // If used inside a thread channel, close that thread
+                // If used inside a thread channel, delete that thread
                 const thread = hubChannel;  // alias for clarity
                 const parentId = thread.parentId;
                 const parentData = client.hubChannels.get(parentId);
                 if (!parentData || !parentData.active) {
-                    // If parent isn't an active hub, we still allow closing, but just archive without list update if not tracked.
-                    // (The user could still archive their thread via command even if hub is off.)
+                    return interaction.reply({ content: '❌ Deleting threads outside of a thread hub is not supported.'})
                 }
-                // Permission check: allow thread owner or mods to close, otherwise deny
+                // Permission check: allow thread owner or mods to delete, otherwise deny
                 if (thread.ownerId !== interaction.user.id && 
                     !interaction.memberPermissions.has(PermissionFlagsBits.ManageThreads)) {
-                    return interaction.reply({ content: '❌ You don’t have permission to close this thread.', ephemeral: true });
+                    return interaction.reply({ content: '❌ You don’t have permission to delete this thread.', flags: MessageFlags.Ephemeral });
                 }
-                interaction.reply({ content: 'Closing thread...', ephemeral: true });
+                interaction.reply({ content: 'Deleting thread...', flags: MessageFlags.Ephemeral });
                 try {
-                    await thread.delete(`Closed by ${interaction.user}`);
+                    await thread.delete(`Deleted by ${interaction.user}`);
                 } catch (err) {
-                    console.error('Failed to close thread:', err);
-                    return interaction.reply({ content: '❌ Failed to close the thread. I might lack permission.', ephemeral: true });
+                    console.error('Failed to delete thread:', err);
+                    return interaction.reply({ content: '❌ Failed to delete the thread. I might lack permission.', flags: MessageFlags.Ephemeral });
                 }
                 // Update the parent hub's thread list if active
                 if (parentData && parentData.active) {
@@ -97,19 +96,18 @@ module.exports = {
                 return;
             } else {
                 // Command used in a text channel (hub channel context)
-                // Present the dropdown menu of active threads
+                // Present the dropdown menu of threads
                 const hubData = client.hubChannels.get(hubChannel.id);
                 if (!hubData || !hubData.active) {
-                    return interaction.reply({ content: '❌ This channel is not an active hub.', ephemeral: true });
+                    return interaction.reply({ content: '❌ This channel is not an active hub.', flags: MessageFlags.Ephemeral });
                 }
-                // Fetch active threads in this channel (to list them)
-                const fetched = await interaction.guild.channels.fetchActiveThreads();
-                const activeThreads = fetched.threads.filter(t => t.parentId === hubChannel.id);
-                if (!activeThreads.size) {
-                    return interaction.reply({ content: 'ℹ️ There are no active threads to close in this channel.', ephemeral: true });
+                // Fetch threads in this channel (to list them)
+                const fetchedThreads = await getChannelThreads(hubChannel);
+                if (!fetchedThreads.size) {
+                    return interaction.reply({ content: 'ℹ️ There are no threads to delete in this channel.', flags: MessageFlags.Ephemeral });
                 }
                 // Build select menu options for each thread
-                const options = activeThreads.map(thread => {
+                const options = fetchedThreads.map(thread => {
                     return {
                         label: thread.name,
                         value: thread.id
@@ -118,17 +116,17 @@ module.exports = {
                 // (If there are more than 25 threads, Discord select max is 25. In such cases, one might need an alternative method.)
                 if (options.length > 25) {
                     // If too many threads, prompt user to use the channel option instead
-                    return interaction.reply({ content: '⚠️ Too many threads to list. Please use `/thread close [thread]` and select the thread by name.', ephemeral: true });
+                    return interaction.reply({ content: '⚠️ Too many threads to list (>25). Please manually delete the thread.', flags: MessageFlags.Ephemeral });
                 }
                 // Create the select menu component
                 const { ActionRowBuilder, StringSelectMenuBuilder } = require('discord.js');
                 const selectMenu = new StringSelectMenuBuilder()
-                    .setCustomId('close-thread-select')
-                    .setPlaceholder('Select a thread to close…')
+                    .setCustomId('delete-thread-select')
+                    .setPlaceholder('Select a thread to delete…')
                     .addOptions(options);
                 const row = new ActionRowBuilder().addComponents(selectMenu);
                 // Reply with the dropdown menu (ephemeral)
-                return interaction.reply({ content: 'Select a thread to close:', components: [row], ephemeral: true });
+                return interaction.reply({ content: 'Select a thread to delete:', components: [row], flags: MessageFlags.Ephemeral });
             }
         }
     }

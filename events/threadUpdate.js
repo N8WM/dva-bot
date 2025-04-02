@@ -6,7 +6,6 @@ module.exports = {
         if (!parentId) return;
         const hubData = newThread.client.hubChannels.get(parentId);
         if (!hubData || !hubData.active) return;
-        // Check if relevant properties changed
         const parentChannel = newThread.guild.channels.cache.get(parentId);
         if (parentChannel) {
             const { updateThreadList } = require('../utils/hubUtil');
