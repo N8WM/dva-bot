@@ -47,7 +47,7 @@ module.exports = {
         fetchedThreads.sort((a, b) => a.createdTimestamp - b.createdTimestamp);
 
         // Build the list description
-        const emoji = ['', '<:inactive:1357192331333341325>', '<:locked:1357192380557557893>', '<:unknown:1357192423264092361>'];
+        const emoji = ['', '<:inactive:1357249289109241877>', '<:locked:1357249354762813513>', '<:unknown:1357249398069002260>'];
         const symbol = t => t.viewable ? (t.locked ? 2 : t.archived ? 1 : 0) : 3;
         const comparator = (a, b) => a.sym - b.sym || a.ts - b.ts;
         let description;
