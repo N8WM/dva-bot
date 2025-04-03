@@ -47,15 +47,27 @@ module.exports = {
         fetchedThreads.sort((a, b) => a.createdTimestamp - b.createdTimestamp);
 
         // Build the list description
+        const emoji = ['', '<:inactive:1357192331333341325>', '<:locked:1357192380557557893>', '<:unknown:1357192423264092361>'];
+        const symbol = t => t.viewable ? (t.locked ? 2 : t.archived ? 1 : 0) : 3;
+        const comparator = (a, b) => a.sym - b.sym || a.ts - b.ts;
         let description;
-        const symbol = t => t.viewable ? (t.locked ? '🔒' : t.archived ? '💤' : '') : '❓';
 
         if (fetchedThreads.size === 0) {
             description = '*No threads yet.*';
         } else {
-            let description1 = fetchedThreads.map(t => `## ${symbol(t)} <#${t.id}>`).join('\n');
-            let description2 = fetchedThreads.map(t => `[ • ${symbol(t)} ${t.name}](https://discord.com/channels/${t.guildId}/${t.id})`).join('\n');
-            description = `**If getting <#0> bug:**\n${description2}\n__ __\n${description1}`;
+            // let description = fetchedThreads.map(t => `## ${emoji[symbol(t)]} <#${t.id}>`).join('\n');
+            description = fetchedThreads
+                .map(t => { return {
+                    thread: t,
+                    sym: symbol(t),
+                    tname: t.name,
+                    ts: t.createdTimestamp,
+                    gid: t.guildId,
+                    id: t.id
+                }})
+                .sort(comparator)
+                .map(x => `## [${emoji[x.sym]} #${x.tname}](https://discord.com/channels/${x.gid}/${x.id})`)
+                .join('\n');
         }
         // Build or update embed
         let embed;
