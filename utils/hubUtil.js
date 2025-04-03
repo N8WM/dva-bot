@@ -47,7 +47,7 @@ module.exports = {
         fetchedThreads.sort((a, b) => a.createdTimestamp - b.createdTimestamp);
 
         // Build the list description
-        const emoji = ['', '<:inactive:1357249289109241877>', '<:locked:1357249354762813513>', '<:unknown:1357249398069002260>'];
+        const emoji = ['<:thread:1357261550661931171>', '<:inactive:1357255965572993044>', '<:locked:1357255979959324672>', '<:unknown:1357256002021363722>'];
         const symbol = t => t.viewable ? (t.locked ? 2 : t.archived ? 1 : 0) : 3;
         const comparator = (a, b) => a.sym - b.sym || a.ts - b.ts;
         let description;
@@ -66,7 +66,7 @@ module.exports = {
                     id: t.id
                 }})
                 .sort(comparator)
-                .map(x => `## [${emoji[x.sym]} #${x.tname}](https://discord.com/channels/${x.gid}/${x.id})`)
+                .map(x => `## [${emoji[x.sym]} ${x.tname}](https://discord.com/channels/${x.gid}/${x.id})`)
                 .join('\n');
         }
         // Build or update embed
